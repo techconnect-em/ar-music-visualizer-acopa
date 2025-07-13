@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPlaying = false;
     let isPageFlipped = false;
     let isDragging = false;
+    let hasPlayedOnce = false; // iOS Safari音声解除用
     
     // iOS Safari検出
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -280,15 +281,39 @@ document.addEventListener('DOMContentLoaded', () => {
         
         async function attemptPlay() {
             try {
-                // iOS Safari対応: 必ずミュートから開始
+                // iOS Safari対応: 段階的な音声有効化
                 if (isIOS && isSafari) {
-                    videoAsset.muted = true;
-                    await videoAsset.play();
-                    isPlaying = true;
-                    updateVideoButton();
-                    console.log('📱 iOS Safari: Video started playing (muted)');
+                    if (!hasPlayedOnce) {
+                        // 初回再生: ミュートで開始
+                        videoAsset.muted = true;
+                        await videoAsset.play();
+                        hasPlayedOnce = true;
+                        isPlaying = true;
+                        updateVideoButton();
+                        console.log('📱 iOS Safari: First play (muted) - tap play again for audio');
+                    } else {
+                        // 2回目以降: 音声有効化を試行
+                        try {
+                            videoAsset.muted = false;
+                            if (videoAsset.paused) {
+                                await videoAsset.play();
+                            }
+                            isPlaying = true;
+                            updateVideoButton();
+                            console.log('📱 iOS Safari: Audio enabled successfully');
+                        } catch (audioError) {
+                            // 音声有効化失敗時はミュートのまま継続
+                            console.log('📱 iOS Safari: Audio enable failed, continuing muted', audioError.name);
+                            videoAsset.muted = true;
+                            if (videoAsset.paused) {
+                                await videoAsset.play();
+                            }
+                            isPlaying = true;
+                            updateVideoButton();
+                        }
+                    }
                 } else {
-                    // その他のブラウザ: ミュート解除を試行
+                    // その他のブラウザ: 音声付き再生を試行
                     videoAsset.muted = false;
                     await videoAsset.play();
                     isPlaying = true;
@@ -301,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // フォールバック：ミュート再生を試行
                     videoAsset.muted = true;
                     await videoAsset.play();
+                    hasPlayedOnce = true;
                     isPlaying = true;
                     updateVideoButton();
                     console.log('Video started playing (muted fallback)');
@@ -315,6 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             try {
                                 videoAsset.muted = true;
                                 await videoAsset.play();
+                                hasPlayedOnce = true;
                                 isPlaying = true;
                                 updateVideoButton();
                                 console.log('📱 iOS Safari compatibility mode successful');
@@ -339,7 +366,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateVideoButton() {
         const icon = videoControl.querySelector('i');
-        icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+        
+        if (isPlaying) {
+            icon.className = 'fas fa-pause';
+            // iOS Safariで音声が無効な場合の視覚的フィードバック
+            if (isIOS && isSafari && videoAsset?.muted && hasPlayedOnce) {
+                videoControl.style.backgroundColor = '#ff6b6b'; // 赤色で音声無効を示す
+                videoControl.title = 'タップして音声を有効にする';
+            } else {
+                videoControl.style.backgroundColor = ''; // デフォルト色
+                videoControl.title = '';
+            }
+        } else {
+            icon.className = 'fas fa-play';
+            videoControl.style.backgroundColor = '';
+            videoControl.title = '';
+        }
     }
 
     function openWebsite() {
@@ -568,6 +610,8 @@ document.addEventListener('DOMContentLoaded', () => {
             iOSCompatible,
             playsinlineSet: videoAsset?.hasAttribute('playsinline'),
             isMuted: videoAsset?.muted,
+            hasPlayedOnce,
+            audioStatus: isIOS && isSafari ? (hasPlayedOnce ? (videoAsset?.muted ? 'muted' : 'enabled') : 'not_started') : 'n/a',
             preloadSetting: videoAsset?.preload,
             isValid: hasVideoAsset && usesCorrectSource && iOSCompatible
         });
