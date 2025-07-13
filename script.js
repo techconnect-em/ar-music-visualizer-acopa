@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 定数定義
+    const VIDEO_ASSET_ID = 'video-asset';
+    
     // DOM要素の取得
     const videoControl = document.getElementById('video-control');
-    const video = document.getElementById('video');
-    const videoAsset = document.getElementById('video-asset');
+    const videoAsset = document.getElementById(VIDEO_ASSET_ID);
     const scanningOverlay = document.getElementById('scanning-overlay');
     const scene = document.querySelector('a-scene');
     const websiteButton = document.getElementById('website-button');
@@ -455,6 +457,25 @@ document.addEventListener('DOMContentLoaded', () => {
         seekbarHandle.addEventListener('touchstart', startTouchDrag);
     }
 
+    // 動画要素の整合性チェック（開発時のみ）
+    function validateVideoSetup() {
+        const hasVideoAsset = !!videoAsset;
+        const videoScreenMaterial = document.getElementById('video-screen')?.getAttribute('material');
+        const usesCorrectSource = videoScreenMaterial?.includes('#' + VIDEO_ASSET_ID);
+        
+        console.log('📋 Video Setup Validation:', {
+            hasVideoAsset,
+            videoAssetSrc: videoAsset?.src,
+            videoScreenUsesCorrectSource: usesCorrectSource,
+            isValid: hasVideoAsset && usesCorrectSource
+        });
+        
+        return hasVideoAsset && usesCorrectSource;
+    }
+    
+    // 初回検証実行
+    setTimeout(validateVideoSetup, 1000);
+
     // デバッグ用（開発時のみ）
     window.debugAR = {
         logStatus,
@@ -462,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         unflipPage,
         playVideo,
         pauseVideo,
-        videoAsset
+        videoAsset,
+        validateVideoSetup
     };
 });
