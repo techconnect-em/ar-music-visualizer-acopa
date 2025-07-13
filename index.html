@@ -25,7 +25,7 @@
                 <video id="video-asset" 
                        preload="metadata" 
                        loop="true" 
-                       muted="true" 
+                       muted="false" 
                        playsinline="true"
                        webkit-playsinline="true"
                        x-webkit-airplay="allow"
@@ -69,15 +69,16 @@
                     </a-entity>
                     
                     <!-- 動画スクリーン（ページがめくれた後に表示） -->
-                    <a-plane id="video-screen" position="-0.4 0 0.02" rotation="0 0 0" scale="1.6 0.9 1"
+                    <a-plane id="video-screen" position="-0.4 0 0.15" rotation="0 0 0" scale="1.6 0.9 1"
                              material="src: #video-asset; transparent: true; opacity: 0"
                              visible="false"
                              animation__fadeIn="property: material.opacity; to: 1; startEvents: video-show; dur: 1500; delay: 1000"
-                             animation__fadeOut="property: material.opacity; to: 0; startEvents: video-hide; dur: 800">
+                             animation__fadeOut="property: material.opacity; to: 0; startEvents: video-hide; dur: 800"
+                             shadow="cast: true; receive: false">
                     </a-plane>
                     
                     <!-- タイトルテキスト -->
-                    <a-text id="title-text" position="0 0.12 0" rotation="0 0 0" scale="0.3 0.3 0.3"
+                    <a-text id="title-text" position="0 0.12 0.08" rotation="0 0 0" scale="0.3 0.3 0.3"
                             value="ACOPA Music Video" color="white" align="center"
                             material="opacity: 0"
                             animation__textShow="property: material.opacity; to: 1; startEvents: text-show; dur: 1000; delay: 1500"
