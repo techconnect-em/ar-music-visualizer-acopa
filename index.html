@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image.prod.js"></script>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="example-container">
+        <video id="video" preload="auto" loop crossorigin="anonymous" style="display: none;">
+            <source src="./assets/acopa_movie.mov" type="video/quicktime" />
+            <source src="./assets/acopa_movie.mov" type="video/mp4" />
+        </video>
+
+        <a-scene
+            mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 1; warmupTolerance: 5; missTolerance: 15; filterMinCF: 0.001; filterBeta: 1000"
+            embedded color-space="sRGB" renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true; precision: highp; logarithmicDepthBuffer: true;"
+            vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+            
+            <a-assets>
+                <!-- 最適化されたACOPA動画を使用 -->
+                <video id="video-asset" preload="auto" loop="true" muted="true" playsinline crossorigin="anonymous">
+                    <!-- 最適化済みMP4動画（73MB） -->
+                    <source src="./assets/acopa_movie_optimized.mp4" type="video/mp4" />
+                    <!-- フォールバック：テスト動画 -->
+                    <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4" />
+                </video>
+            </a-assets>
+
+            <a-camera position="0 0 0" look-controls="enabled: false" camera="fov: 60; near: 0.1; far: 1000"></a-camera>
+
+            <a-entity mindar-image-target="targetIndex: 0">
+                <!-- 影とライティング設定 -->
+                <a-entity light="type: directional; castShadow: true; intensity: 0.6;" position="-1 2 1.5"></a-entity>
+                <a-entity light="type: ambient; intensity: 0.4"></a-entity>
+                
+                <!-- コンテンツ全体の一括制御 -->
+                <a-entity id="content-root" position="0 -0.02 0">
+                    
+                    <!-- ページめくりピボット（左端を軸とする） -->
+                    <a-entity id="page-pivot" position="-0.5 0 0"
+                              animation__flip="property: rotation; to: 0 -180 0; startEvents: page-flip; dur: 2000; easing: easeInOutSine"
+                              animation__unflip="property: rotation; to: 0 0 0; startEvents: page-unflip; dur: 2000; easing: easeInOutSine"
+                        
+                        <!-- めくれるページ（厚みを持たせた本物のページ） -->
+                        <a-box id="page-flip" position="0.5 0 0" width="1" height="1" depth="0.005"
+                               material="opacity: 0; transparent: true"
+                               geometry="primitive: box"
+                               shadow="cast: true">
+                            <!-- 表面（1.png） -->
+                            <a-plane position="0 0 0.0026" rotation="0 0 0" width="1" height="1"
+                                     material="src: ./assets/1.png; transparent: true; side: front"></a-plane>
+                            <!-- 裏面（2.png） -->
+                            <a-plane position="0 0 -0.0026" rotation="0 180 0" width="1" height="1"
+                                     material="src: ./assets/2.png; transparent: true; side: front"></a-plane>
+                        </a-box>
+                    </a-entity>
+                    
+                    <!-- 動画スクリーン（ページがめくれた後に表示） -->
+                    <a-plane id="video-screen" position="-0.4 0 0.02" rotation="0 0 0" scale="1.6 0.9 1"
+                             material="src: #video-asset; transparent: true; opacity: 0"
+                             visible="false"
+                             animation__fadeIn="property: material.opacity; to: 1; startEvents: video-show; dur: 1500; delay: 1000"
+                             animation__fadeOut="property: material.opacity; to: 0; startEvents: video-hide; dur: 800">
+                    </a-plane>
+                    
+                    <!-- タイトルテキスト -->
+                    <a-text id="title-text" position="0 0.12 0" rotation="0 0 0" scale="0.3 0.3 0.3"
+                            value="ACOPA Music Video" color="white" align="center"
+                            material="opacity: 0"
+                            animation__textShow="property: material.opacity; to: 1; startEvents: text-show; dur: 1000; delay: 1500"
+                            animation__textHide="property: material.opacity; to: 0; startEvents: text-hide; dur: 500">
+                    </a-text>
+                    
+                </a-entity>
+                
+                <!-- デバッグ用：動画の枠線 -->
+                <a-ring id="video-guide" position="0 0.1 0.001" rotation="0 0 0" 
+                        radius-inner="0.7" radius-outer="0.72" color="red" 
+                        material="opacity: 0.5" visible="false">
+                </a-ring>
+            </a-entity>
+        </a-scene>
+    </div>
+
+    <div id="scanning-overlay">CDのジャケットをスキャンしてください</div>
+  
+    <!-- シークバーコンテナ -->
+    <div id="seekbar-container" style="display: none;">
+        <div id="seekbar-wrapper">
+            <span id="current-time">0:00</span>
+            <div id="seekbar">
+                <div id="seekbar-progress"></div>
+                <div id="seekbar-handle"></div>
+            </div>
+            <span id="duration-time">0:00</span>
+        </div>
+    </div>
+
+    <div id="button-container">
+        <button id="youtube-button">
+            <i class="fab fa-youtube"></i>
+        </button>
+        <button id="video-control">
+            <i class="fas fa-play"></i>
+        </button>
+        <button class="social-links" id="website-button">
+            <img src="./assets/TechConnectロゴ (4).png" alt="TechConnect" class="button-logo">
+        </button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
