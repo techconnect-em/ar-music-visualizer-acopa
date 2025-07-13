@@ -22,8 +22,17 @@
             
             <a-assets>
                 <!-- 最適化されたACOPA動画を使用 -->
-                <video id="video-asset" preload="auto" loop="true" muted="true" playsinline crossorigin="anonymous">
-                    <!-- 最適化済みMP4動画（73MB） -->
+                <video id="video-asset" 
+                       preload="metadata" 
+                       loop="true" 
+                       muted="true" 
+                       playsinline="true"
+                       webkit-playsinline="true"
+                       x-webkit-airplay="allow"
+                       crossorigin="anonymous"
+                       controls="false"
+                       autoplay="false">
+                    <!-- 最適化済みMP4動画 -->
                     <source src="./assets/acopa_movie_optimized.mp4" type="video/mp4" />
                     <!-- フォールバック：テスト動画 -->
                     <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4" />

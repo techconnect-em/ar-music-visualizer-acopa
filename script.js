@@ -29,7 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPlaying = false;
     let isPageFlipped = false;
     let isDragging = false;
+    
+    // iOS Safari検出
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
+    // iOS Safari用テクスチャ更新システム
+    let iOSTextureUpdater = null;
+    
     // 初期化
     init();
 
@@ -38,7 +45,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (videoAsset) {
             videoAsset.muted = true;
             videoAsset.loop = true;
-            videoAsset.preload = 'auto';
+            videoAsset.preload = isIOS ? 'metadata' : 'auto';
+            
+            // iOS Safari対応の追加設定
+            if (isIOS) {
+                videoAsset.setAttribute('playsinline', 'true');
+                videoAsset.setAttribute('webkit-playsinline', 'true');
+                videoAsset.playsInline = true;
+                console.log('📱 iOS Safari対応設定を適用');
+            }
             
             // 動画のデバッグイベントリスナー
             videoAsset.addEventListener('loadstart', () => {
@@ -72,8 +87,56 @@ document.addEventListener('DOMContentLoaded', () => {
         // シークバーの初期化
         setupSeekbar();
         
+        // iOS Safari用テクスチャ更新システムの初期化
+        if (isIOS && isSafari) {
+            setupiOSTextureUpdater();
+        }
+        
         console.log('AR Video Player initialized');
         console.log('Video asset:', videoAsset);
+        console.log('iOS Safari mode:', isIOS && isSafari);
+    }
+    
+    // iOS Safari用テクスチャ更新システム
+    function setupiOSTextureUpdater() {
+        const videoScreen = document.getElementById('video-screen');
+        if (!videoScreen || !videoAsset) return;
+        
+        function updateTexture() {
+            try {
+                const mesh = videoScreen.getObject3D('mesh');
+                if (mesh && mesh.material && mesh.material.map && !videoAsset.paused) {
+                    mesh.material.map.needsUpdate = true;
+                }
+            } catch (error) {
+                console.warn('📱 iOS texture update error:', error);
+            }
+        }
+        
+        // 再生開始時にテクスチャ更新を開始
+        videoAsset.addEventListener('play', () => {
+            if (iOSTextureUpdater) clearInterval(iOSTextureUpdater);
+            iOSTextureUpdater = setInterval(updateTexture, 50); // 20fps
+            console.log('📱 iOS Safari テクスチャ更新開始');
+        });
+        
+        // 停止時にテクスチャ更新を終了
+        videoAsset.addEventListener('pause', () => {
+            if (iOSTextureUpdater) {
+                clearInterval(iOSTextureUpdater);
+                iOSTextureUpdater = null;
+                console.log('📱 iOS Safari テクスチャ更新停止');
+            }
+        });
+        
+        videoAsset.addEventListener('ended', () => {
+            if (iOSTextureUpdater) {
+                clearInterval(iOSTextureUpdater);
+                iOSTextureUpdater = null;
+            }
+        });
+        
+        console.log('📱 iOS Safari テクスチャ更新システム初期化完了');
     }
 
     function setupEventListeners() {
@@ -217,23 +280,49 @@ document.addEventListener('DOMContentLoaded', () => {
         
         async function attemptPlay() {
             try {
-                // まずミュート解除を試行
-                videoAsset.muted = false;
-                await videoAsset.play();
-                isPlaying = true;
-                updateVideoButton();
-                console.log('Video started playing with audio');
-            } catch (error) {
-                console.log('Audio play failed, trying muted playback...');
-                try {
-                    // ミュート再生を試行
+                // iOS Safari対応: 必ずミュートから開始
+                if (isIOS && isSafari) {
                     videoAsset.muted = true;
                     await videoAsset.play();
                     isPlaying = true;
                     updateVideoButton();
-                    console.log('Video started playing (muted)');
+                    console.log('📱 iOS Safari: Video started playing (muted)');
+                } else {
+                    // その他のブラウザ: ミュート解除を試行
+                    videoAsset.muted = false;
+                    await videoAsset.play();
+                    isPlaying = true;
+                    updateVideoButton();
+                    console.log('Video started playing with audio');
+                }
+            } catch (error) {
+                console.log('Primary play failed, trying muted fallback...', error.name);
+                try {
+                    // フォールバック：ミュート再生を試行
+                    videoAsset.muted = true;
+                    await videoAsset.play();
+                    isPlaying = true;
+                    updateVideoButton();
+                    console.log('Video started playing (muted fallback)');
                 } catch (mutedError) {
-                    console.error('Even muted video play failed:', mutedError);
+                    console.error('❌ Even muted video play failed:', mutedError.name, mutedError.message);
+                    
+                    // iOS Safari用の最後の手段
+                    if (isIOS) {
+                        console.log('📱 Attempting iOS Safari compatibility mode...');
+                        videoAsset.load(); // 動画を再読み込み
+                        setTimeout(async () => {
+                            try {
+                                videoAsset.muted = true;
+                                await videoAsset.play();
+                                isPlaying = true;
+                                updateVideoButton();
+                                console.log('📱 iOS Safari compatibility mode successful');
+                            } catch (finalError) {
+                                console.error('❌ Final iOS play attempt failed:', finalError.name, finalError.message);
+                            }
+                        }, 200);
+                    }
                 }
             }
         }
@@ -463,14 +552,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const videoScreenMaterial = document.getElementById('video-screen')?.getAttribute('material');
         const usesCorrectSource = videoScreenMaterial?.includes('#' + VIDEO_ASSET_ID);
         
+        // iOS Safari対応チェック
+        const iOSCompatible = !isIOS || (
+            videoAsset?.hasAttribute('playsinline') &&
+            videoAsset?.muted === true &&
+            videoAsset?.preload === 'metadata'
+        );
+        
         console.log('📋 Video Setup Validation:', {
             hasVideoAsset,
             videoAssetSrc: videoAsset?.src,
             videoScreenUsesCorrectSource: usesCorrectSource,
-            isValid: hasVideoAsset && usesCorrectSource
+            isIOSDevice: isIOS,
+            isSafariDevice: isSafari,
+            iOSCompatible,
+            playsinlineSet: videoAsset?.hasAttribute('playsinline'),
+            isMuted: videoAsset?.muted,
+            preloadSetting: videoAsset?.preload,
+            isValid: hasVideoAsset && usesCorrectSource && iOSCompatible
         });
         
-        return hasVideoAsset && usesCorrectSource;
+        return hasVideoAsset && usesCorrectSource && iOSCompatible;
     }
     
     // 初回検証実行
