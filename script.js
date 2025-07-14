@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pageFlip = document.getElementById('page-flip');
     const videoScreen = document.getElementById('video-screen');
     const titleText = document.getElementById('title-text');
+    const shadowReceiver = document.getElementById('shadow-receiver');
     
     // シークバー要素の取得
     const seekbarContainer = document.getElementById('seekbar-container');
@@ -199,25 +200,31 @@ document.addEventListener('DOMContentLoaded', () => {
         
         isPageFlipped = true;
         
-        
-        // ページをめくるアニメーション
-        pageFlip.emit('page-flip');
-        
-        // 動画スクリーンとタイトルを表示（ページが完全にめくれた後）
+        // マーカー認識から2秒待ってからページめくり開始
         setTimeout(() => {
-            // 動画とタイトルを表示
-            videoScreen.setAttribute('visible', 'true');
-            videoScreen.emit('video-show');
-            titleText.emit('text-show');
-        }, 2000);
+            // ページをめくるアニメーション
+            pageFlip.emit('page-flip');
+            
+            // 動画スクリーンとタイトルを表示（ページが完全にめくれた後）
+            setTimeout(() => {
+                // 動画とタイトル、影受け面を表示
+                videoScreen.setAttribute('visible', 'true');
+                shadowReceiver.setAttribute('visible', 'true');
+                videoScreen.emit('video-show');
+                titleText.emit('text-show');
+                shadowReceiver.emit('video-show');
+            }, 2000);
+            
+            // シークバーを動画が完全に表示された後に表示（delay: 1000ms + dur: 1500ms = 2500ms後）
+            setTimeout(() => {
+                seekbarContainer.style.display = 'block';
+                console.log('📊 シークバー表示 - 動画フェードイン完了後');
+            }, 4500); // 2000ms (ページめくり) + 2500ms (動画フェードイン完了) = 4500ms
+            
+            console.log('Page flipped');
+        }, 2000); // マーカー認識から2秒待機
         
-        // シークバーを動画が完全に表示された後に表示（delay: 1000ms + dur: 1500ms = 2500ms後）
-        setTimeout(() => {
-            seekbarContainer.style.display = 'block';
-            console.log('📊 シークバー表示 - 動画フェードイン完了後');
-        }, 4500); // 2000ms (ページめくり) + 2500ms (動画フェードイン完了) = 4500ms
-        
-        console.log('Page flipped');
+        console.log('Page flip scheduled in 2 seconds');
     }
 
     function unflipPage() {
@@ -226,16 +233,18 @@ document.addEventListener('DOMContentLoaded', () => {
         isPageFlipped = false;
         
         
-        // 動画スクリーンとタイトルを非表示
+        // 動画スクリーンとタイトル、影受け面を非表示
         videoScreen.emit('video-hide');
         titleText.emit('text-hide');
+        shadowReceiver.emit('video-hide');
         
         // シークバーを非表示
         seekbarContainer.style.display = 'none';
         
-        // 動画スクリーンを完全に非表示
+        // 動画スクリーンと影受け面を完全に非表示
         setTimeout(() => {
             videoScreen.setAttribute('visible', 'false');
+            shadowReceiver.setAttribute('visible', 'false');
         }, 800);
         
         // ページを元に戻す
