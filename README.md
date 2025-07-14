@@ -23,17 +23,28 @@ CDジャケットをマーカーとして使用し、CDが開くような演出�
 
 ```
 ar-music-visualizer-acopa/
-├── index.html          # メインHTMLファイル
-├── script.js           # JavaScript制御ファイル
-├── style.css           # スタイルシート
+├── index.html                    # メインHTMLファイル
+├── script.js                     # JavaScript制御ファイル
+├── style.css                     # スタイルシート
 ├── assets/
-│   ├── targets.mind    # ARマーカーファイル
-│   ├── acopa_movie.mov # 動画ファイル
-│   └── 1.png          # CDジャケット画像
+│   ├── targets.mind              # ARマーカーファイル
+│   ├── acopa_movie_optimized.mp4 # 最適化済み動画ファイル（29MB）
+│   ├── 1.png                     # CDジャケット表面画像
+│   ├── 2.png                     # CDジャケット裏面画像
+│   └── TechConnectロゴ (4).png   # ロゴファイル
 └── README.md
 ```
 
-### 2. ローカルサーバーの起動
+### 2. GitHub Pages デプロイ（推奨）
+
+本プロジェクトはGitHub Pagesで静的ホスティングされています:
+
+```bash
+# 本番環境
+https://techconnect-em.github.io/ar-music-visualizer-acopa/
+```
+
+### 3. ローカル開発（オプション）
 
 HTTPSまたはHTTPサーバーが必要です（WebRTCのため）:
 
@@ -41,16 +52,14 @@ HTTPSまたはHTTPサーバーが必要です（WebRTCのため）:
 # Python 3を使用
 python3 -m http.server 8080
 
-# Node.jsを使用
-npx http-server -p 8080
-
 # Live Serverを使用（VS Code拡張）
 右クリック → "Open with Live Server"
 ```
 
-### 3. アクセス
+### 4. アクセス
 
-ブラウザで `http://localhost:8080` にアクセスしてください。
+- **本番**: GitHub Pagesの公開URLにアクセス
+- **開発**: ブラウザで `http://localhost:8080` にアクセス
 
 ## 使用方法
 
@@ -95,6 +104,27 @@ npx http-server -p 8080
 - ✅ Safari (iOS/macOS)
 - ✅ Firefox (Android/Desktop)
 - ⚠️ Edge (一部機能制限あり)
+
+## セキュリティ
+
+### プライバシー保護
+
+- **カメラアクセス**: 本アプリは画像処理のみでカメラを使用し、映像を保存・送信しません
+- **データ収集**: ユーザーデータの収集・送信は一切行いません
+- **静的ホスティング**: GitHub Pagesでサーバーレス実行され、バックエンドデータベースは使用しません
+
+### セキュリティ対策
+
+- **HTTPS配信**: GitHub Pagesで自動的にHTTPS配信
+- **CSP対応**: コンテンツセキュリティポリシーに準拠
+- **XSS対策**: サニタイズ処理とエスケープ処理を実装
+- **機密情報**: APIキーや機密データは含まれていません
+
+### 安全な使用のために
+
+- 信頼できるネットワークでアクセスしてください
+- ブラウザを最新版に保ちください
+- 公開Wi-Fiでの使用時は注意してください
 
 ## 開発者向け情報
 
