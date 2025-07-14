@@ -68,15 +68,6 @@
                         </a-box>
                     </a-entity>
                     
-                    <!-- 影受け用の背景面 -->
-                    <a-plane id="shadow-receiver" position="0 0 0.05" rotation="-90 0 0" scale="2 2 1"
-                             material="color: #f0f0f0; transparent: true; opacity: 0.1"
-                             shadow="receive: true; cast: false"
-                             visible="false"
-                             animation__showShadow="property: material.opacity; to: 0.2; startEvents: video-show; dur: 1500; delay: 1000"
-                             animation__hideShadow="property: material.opacity; to: 0; startEvents: video-hide; dur: 800">
-                    </a-plane>
-                    
                     <!-- 動画スクリーン（ページがめくれた後に表示） -->
                     <a-plane id="video-screen" position="-0.35 0.1 0.3" rotation="0 -5 0" scale="1.6 0.9 1"
                              material="src: #video-asset; transparent: true; opacity: 0; emissive: #222222; emissiveIntensity: 0.3"
