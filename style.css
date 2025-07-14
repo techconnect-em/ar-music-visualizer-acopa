@@ -282,8 +282,9 @@ body {
     
     #seekbar-container {
         bottom: 120px;
-        width: 95%;
-        padding: 12px 15px;
+        width: 80%;
+        padding: 12px 20px;
+        margin: 0 auto;
     }
     
     #seekbar-wrapper {
@@ -294,5 +295,23 @@ body {
     #duration-time {
         font-size: 12px;
         min-width: 35px;
+    }
+}
+
+/* 小型スマートフォン向けの追加調整 */
+@media (max-width: 480px) {
+    #seekbar-container {
+        width: 75%;
+        padding: 10px 15px;
+    }
+    
+    #seekbar-wrapper {
+        gap: 8px;
+    }
+    
+    #current-time,
+    #duration-time {
+        font-size: 11px;
+        min-width: 30px;
     }
 }
